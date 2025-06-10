@@ -1,14 +1,14 @@
 # RESTful API
 API ini menyediakan fungsionalitas untuk mendapatkan rekomendasi tempat wisata dan berinteraksi melalui chatbot untuk mendapatkan informasi seputar tempat wisata, termasuk prediksi rating dan klasifikasi popularitas. Kami menggunakan Python dengan Flask Framework untuk membangun RESTful API ini, dan respons yang diberikan dalam format JSON.
 
-## 🌐 Endpoint
 
-## Rekomendasi Wisata
+## 1. Rekomendasi Wisata
 Bagian ini menyediakan endpoint untuk mendapatkan rekomendasi tempat wisata berdasarkan fitur-fitur yang diberikan. Sistem rekomendasi ini dibangun menggunakan model yang memanfaatkan TF-IDF Vectorizer untuk representasi teks dan Cosine Similarity untuk menghitung kemiripan antar tempat wisata. Data utama untuk rekomendasi disimpan dalam DataFrame df_tourism yang diproses bersama dengan index place_indices.
 
+## 🌐 Endpoint
 ---
 
-**Base URL :**
+**Base URL :** 
 > http://127.0.0.1:5000
 
 **Path :**
@@ -179,7 +179,7 @@ print(response.json())
 
 
 
-# 📘 API Prediksi Rating Tempat Wisata
+## 2. API Prediksi Rating Tempat Wisata
 
 API ini digunakan untuk memprediksi **rating** dari tempat wisata berdasarkan **lokasi, harga, dan kategori**. Model ini menggunakan **TensorFlow Keras**, serta preprocessing melalui `StringLookup` dan `StandardScaler` yang telah disimpan dalam format pickle.
 
@@ -296,7 +296,96 @@ print(response.json())
 6. Kembalikan hasil prediksi dalam format JSON.
 
 
+# 3. API Klasifikasi Popularitas Tempat Wisata
 
+API ini digunakan untuk mengklasifikasikan **popularitas** dari suatu tempat wisata berdasarkan fitur-fitur seperti **rating, jumlah pengunjung, dan harga**. Model ini menggunakan **Neural Network (TensorFlow Keras)** dan telah disimpan dalam format `.h5`.
+
+---
+
+## 🌐 Endpoint
+
+**Base URL**  
+`http://127.0.0.1:5000/predict`
+
+**Method**  
+`POST`
+
+---
+
+## 📋 Headers
+
+```http
+Content-Type: application/json
+```
+
+---
+
+## 📦 Request Body (JSON)
+```json
+{
+  "features": [4.5, 2000, 150000]
+}
+```
+| Index         | Fitur             | Tipe  | Deskripsi                                  |
+|---------------|-------------------|-------|--------------------------------------------|
+| `0`           | rating            | float | Rating tempat wisata (contoh: 4.5)         |
+| `1`           | Jumlah Pengunjung | int   | Total pengunjung per tahun                 |
+| `2`           | Harga             | int   | Harga tiket masuk dalam Rupiah (IDR)       |
+
+---
+
+## ✅ Contoh Request (Python)
+
+```python
+import requests
+
+url = "http://localhost:5000/cek_popularitas"
+payload = {
+    "features": [4.5, 2000, 150000]
+}
+headers = {"Content-Type": "application/json"}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+---
+## 📤 Contoh Response
+
+```json
+{
+  "prediction": "Popular"
+}
+```
+
+---
+
+## ❌ Contoh Error Response
+
+```json
+{
+  "error": "Invalid input format"
+}
+```
+> Error ini muncul jika key features tidak tersedia atau formatnya salah (bukan list angka).
+
+---
+
+## 🛠️ Teknologi & File yang Digunakan
+| Komponen          | File                   | Deskripsi                                    |
+| ----------------- | ---------------------- | -------------------------------------------- |
+| Model Klasifikasi | `popularitas_model.h5` | Model Keras biner untuk prediksi popularitas |
+| API Service       | `app.py`               | Script Flask API                             |
+
+---
+
+## 🔁 Alur Prediksi
+1. Terima input dalam format JSON dengan key features.
+2. Lakukan reshaping agar sesuai format input model (1 x 3).
+3. Jalankan prediksi menggunakan model Neural Network.
+4. Ambil output probabilitas, lalu konversi menjadi:
+   - "Popular" jika skor > 0.5
+   - "Not Popular" jika skor <= 0.5
 
 
 
