@@ -415,7 +415,7 @@ Content-Type: application/json
 
 ```json
 {
-  "prompt": "Rekomendasikan tempat wisata yang mirip dengan Pantai Sanur."
+  "prompt": "Rekomendasikan tempat wisata yang mirip dengan Museum Taman Prasasti."
 }
 
 ```
@@ -431,52 +431,78 @@ Content-Type: application/json
 
 ## 🎯 Tipe Pertanyaan yang Didukung Chatbot
 
-| Tipe Pertanyaan   | Contoh Kalimat                                                    | Output                                                                    |
-|-------------------|-------------------------------------------------------------------|---------------------------------------------------------------------------|
-| Prediksi Rating   | "Berapa rating dari Tangkuban Perahu?"                            | Rating diprediksi berdasarkan fitur tempat wisata                         |
-| Rekomendasi       | "Tempat seperti Dago Dreampark apa saja yang direkomendasikan?"   | Rekomendasi tempat wisata serupa berdasarkan TF-IDF dan cosine similarity |
+| Tipe Pertanyaan   | Contoh Kalimat                                                           | Output                                                                    |
+|-------------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| Prediksi Rating   | "Berapa rating dari Tangkuban Perahu?"                                   | Rating diprediksi berdasarkan fitur tempat wisata                         |
+| Rekomendasi       | "Tempat seperti Museum Taman Prasasti apa saja yang direkomendasikan?"   | Rekomendasi tempat wisata serupa berdasarkan TF-IDF dan cosine similarity |
 
 
 ---
 
 ## ✅ Contoh Request (Python)
-
+### rekomendasi wisata
 ```python
 import requests
 
-url = "http://localhost:5000/predict"
+url = "http://localhost:5000/chatbot"
 payload = {
-    "Place_Name": "Pantai Parangtritis",
-    "City": "Yogyakarta",
-    "Category": "Nature",
-    "Price": 10000,
-    "Lat": -8.0206,
-    "Long": 110.3252
+  "prompt": "saran rekomendasi tempat wisata yang mirip dengan Museum Taman Prasasti"
 }
+
 headers = {"Content-Type": "application/json"}
 
 response = requests.post(url, json=payload, headers=headers)
 print(response.json())
+
 ```
 
----
+### prediksi rating
+```python
+import requests
+
+url = "http://localhost:5000/chatbot"
+payload = {
+  "prompt": "Berapa rating Kota Tua?"
+}
+
+headers = {"Content-Type": "application/json"}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+
+```
 
 ## 📤 Contoh Response
-
+### Untuk Rekomendasi
 ```json
 {
-  "place_name": "Pantai Parangtritis",
-  "predicted_rating": 3.9780099391937256
+    "response": "Berikut rekomendasi mirip dengan 'Museum Taman Prasasti':\n\n21. Museum Wayang (Kategori: Budaya, Harga: Rp5000, Rating: 4.5)\n\n60. Museum Tekstil (Kategori: Budaya, Harga: Rp5000, Rating: 4.5)\n\n20. Museum Taman Prasasti (Kategori: Budaya, Harga: Rp2000, Rating: 4.5)\n\n74. Museum Tengah Kebun (Kategori: Budaya, Harga: Rp0, Rating: 4.6)\n\n41. Museum Bahari Jakarta (Kategori: Budaya, Harga: Rp2000, Rating: 4.4)"
 }
 ```
 
----
-
-## ❌ Contoh Error Response
+### Untuk Prediksi Rating
 
 ```json
 {
-  "error": "'City'"
+    "response": "Prediksi rating untuk 'Kota Tua' adalah sekitar 4.68."
+}
+```
+
+
+---
+## ❌ Contoh Error Response rekomendasi wisata
+
+```json
+{
+    "response": "Maaf, saya tidak menemukan data tentang tempat 'Pantai Manggar'. Coba pastikan ejaannya benar atau tanyakan tempat lain."
+}
+```
+
+## ❌ Contoh Error Response prediksi rating
+
+```json
+{
+    "response": "Maaf, saya tidak menemukan data tentang tempat 'Pantai Manggar'. Coba pastikan ejaannya benar atau tanyakan tempat lain."
 }
 ```
 
@@ -486,24 +512,32 @@ print(response.json())
 
 ## 🛠️ Teknologi & File yang Digunakan
 
-| Komponen               | File                         | Deskripsi                              |
-|------------------------|------------------------------|----------------------------------------|
-| Model ML               | `model_tempat.h5`            | Model Keras untuk prediksi rating      |
-| Scaler fitur numerik   | `scaler_tempat.pkl`          | StandardScaler untuk fitur numerik     |
-| Lookup kategori        | `lookup_tempat_category.pkl` | One-hot encoder untuk kolom `Category` |
-| Lookup kota            | `lookup_tempat_city.pkl`     | One-hot encoder untuk kolom `City`     |
-| API Service            | `app.py`                     | Script Flask API                       |
+## 📦 Struktur File & Fungsi Model
+
+| Fungsi                 | File/Model                    | Deskripsi                                                                |
+|------------------------|-------------------------------|--------------------------------------------------------------------------|
+| **Model Prediksi Rating** | `model_tempat.h5`          | Model TensorFlow Keras untuk prediksi rating tempat                      |
+|                        | `scaler_tempat.pkl`           | `StandardScaler` untuk `Price`, `Lat`, dan `Long`                        |
+|                        | `lookup_tempat_city.pkl`      | `StringLookup` untuk encoding kolom `City`                               |
+|                        | `lookup_tempat_category.pkl`  | `StringLookup` untuk encoding kolom `Category`                           |
+| **Model Rekomendasi**  | `cosine_sim_matrix.pkl`       | Matriks kemiripan antar tempat wisata                                    |
+|                        | `tfidf_vectorizer.pkl`        | Vectorizer TF-IDF untuk ekstraksi fitur konten tempat wisata             |
+|                        | `place_indices.pkl`           | Pemetaan indeks nama tempat wisata                                       |
+|                        | `df_tourism.pkl`              | Dataset tempat wisata (berisi nama, kategori, kota, harga, dll.)         |
+| **NLP Prompt Engine**  | Gemini 1.5 Flash (via API/SDK)| Mengidentifikasi maksud pertanyaan dan nama tempat dalam kalimat pengguna|
+
 
 ---
 
-## 🔁 Alur Prediksi
-
-1. Ambil data dari request body.
-2. Encode `City` dan `Category` menggunakan `StringLookup`.
-3. Normalisasi `Price`, `Lat`, dan `Long` menggunakan `StandardScaler`.
-4. Gabungkan semua fitur menjadi satu tensor.
-5. Lakukan prediksi rating menggunakan model Keras.
-6. Kembalikan hasil prediksi dalam format JSON.
+## 🔁 Alur Kerja Chatbot
+1. Pengguna mengirim pertanyaan ke endpoint /chatbot.
+2. Gemini membaca dan memahami pertanyaan:
+- Mengekstrak nama tempat wisata (jika ada).
+- Mengklasifikasi jenis pertanyaan: PREDIKSI atau REKOMENDASI.
+3. Model yang sesuai dijalankan:
+- Prediksi Rating menggunakan model model_tempat.h5 + preprocessing.
+- Rekomendasi menggunakan TF-IDF dan cosine similarity.
+4. Sistem merespons dalam format teks JSON.
 
 
 
