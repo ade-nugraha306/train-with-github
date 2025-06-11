@@ -388,7 +388,122 @@ print(response.json())
    - "Not Popular" jika skor <= 0.5
 
 
+## 4. API Chatbot Wisata (Rekomendasi & Prediksi Rating)
+API ini menyediakan layanan chatbot pintar untuk memberikan rekomendasi tempat wisata serta prediksi rating berdasarkan informasi lokasi, harga, dan kategori. Sistem ini menggunakan Gemini 1.5 Flash untuk memahami maksud pengguna dan menjalankan model yang sesuai.
 
+---
+
+## 🌐 Endpoint
+
+**Base URL**  
+`http://localhost:5000/chatbot`
+
+**Method**  
+`POST`
+
+---
+
+## 📋 Headers
+
+```http
+Content-Type: application/json
+```
+
+---
+
+## 📦 Request Body (JSON)
+
+```json
+{
+  "prompt": "Rekomendasikan tempat wisata yang mirip dengan Pantai Sanur."
+}
+
+```
+
+### Penjelasan Field:
+
+| Field         | Tipe     | Wajib | Deskripsi                                  |
+|---------------|----------|-------|--------------------------------------------|
+| `prompt`      | string	 | Ya	   | Pertanyaan pengguna tentang wisata         |
+
+
+---
+
+## 🎯 Tipe Pertanyaan yang Didukung Chatbot
+
+| Tipe Pertanyaan   | Contoh Kalimat                                                    | Output                                                                    |
+|-------------------|-------------------------------------------------------------------|---------------------------------------------------------------------------|
+| Prediksi Rating   | "Berapa rating dari Tangkuban Perahu?"                            | Rating diprediksi berdasarkan fitur tempat wisata                         |
+| Rekomendasi       | "Tempat seperti Dago Dreampark apa saja yang direkomendasikan?"   | Rekomendasi tempat wisata serupa berdasarkan TF-IDF dan cosine similarity |
+
+
+---
+
+## ✅ Contoh Request (Python)
+
+```python
+import requests
+
+url = "http://localhost:5000/predict"
+payload = {
+    "Place_Name": "Pantai Parangtritis",
+    "City": "Yogyakarta",
+    "Category": "Nature",
+    "Price": 10000,
+    "Lat": -8.0206,
+    "Long": 110.3252
+}
+headers = {"Content-Type": "application/json"}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+---
+
+## 📤 Contoh Response
+
+```json
+{
+  "place_name": "Pantai Parangtritis",
+  "predicted_rating": 3.9780099391937256
+}
+```
+
+---
+
+## ❌ Contoh Error Response
+
+```json
+{
+  "error": "'City'"
+}
+```
+
+> Error ini muncul jika parameter wajib tidak disertakan dalam request.
+
+---
+
+## 🛠️ Teknologi & File yang Digunakan
+
+| Komponen               | File                         | Deskripsi                              |
+|------------------------|------------------------------|----------------------------------------|
+| Model ML               | `model_tempat.h5`            | Model Keras untuk prediksi rating      |
+| Scaler fitur numerik   | `scaler_tempat.pkl`          | StandardScaler untuk fitur numerik     |
+| Lookup kategori        | `lookup_tempat_category.pkl` | One-hot encoder untuk kolom `Category` |
+| Lookup kota            | `lookup_tempat_city.pkl`     | One-hot encoder untuk kolom `City`     |
+| API Service            | `app.py`                     | Script Flask API                       |
+
+---
+
+## 🔁 Alur Prediksi
+
+1. Ambil data dari request body.
+2. Encode `City` dan `Category` menggunakan `StringLookup`.
+3. Normalisasi `Price`, `Lat`, dan `Long` menggunakan `StandardScaler`.
+4. Gabungkan semua fitur menjadi satu tensor.
+5. Lakukan prediksi rating menggunakan model Keras.
+6. Kembalikan hasil prediksi dalam format JSON.
 
 
 
